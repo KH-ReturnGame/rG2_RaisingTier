@@ -1,7 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI; // UI 요소 사용을 위해 추가
-using TMPro; // TextMeshPro 사용을 위해 추가
-using System.Collections; // IEnumerator 사용
+using UnityEngine.UI;
+using TMPro;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -11,17 +11,16 @@ public class GameManager : MonoBehaviour
 
     [Header("점수 시스템")]
     public int score = 0;
-    public TextMeshProUGUI scoreText; // TMP Text 컴포넌트 연결용
+    public TextMeshProUGUI scoreText;
 
     [Header("생명 시스템")]
     public int lives = 3;
-    public TextMeshProUGUI livesText; // TMP Text 컴포넌트 연결용
+    public TextMeshProUGUI livesText;
     
     bool gameOverFlag = false;
 
     void Start()
     {
-        // 점수와 생명 초기화
         UpdateScoreUI();
         UpdateLivesUI();
     }
@@ -55,31 +54,27 @@ public class GameManager : MonoBehaviour
         AddScore((int)Mathf.Pow(2, newLevel - 1));
     }
 
-    // 점수 추가 함수
     public void AddScore(int points)
     {
         score += points;
         UpdateScoreUI();
         
-        // 점수 추가 효과 (선택적)
         Debug.Log($"+{points} 점! 현재 점수: {score}");
     }
 
-    // 점수 UI 업데이트
     void UpdateScoreUI()
     {
         if (scoreText != null)
         {
-            scoreText.text = $"Score: {score}";
+            scoreText.text = $"Score : {score}";
         }
     }
 
-    // 생명 UI 업데이트
     void UpdateLivesUI()
     {
         if (livesText != null)
         {
-            livesText.text = $"Lives: {lives}";
+            livesText.text = $"Lives : {lives}";
         }
     }
 
@@ -105,16 +100,13 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        // 이미 게임오버 상태라면 리턴
         if (gameOverFlag) return;
-        
-        // 생명 감소
+
         lives--;
         UpdateLivesUI();
         
         Debug.Log($"생명 감소! 남은 생명: {lives}");
         
-        // 생명이 0이 되면 게임 오버
         if (lives <= 0)
         {
             gameOverFlag = true;
@@ -123,23 +115,11 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // 잠시 멈추고 게임 계속하기
-            StartCoroutine(PauseThenContinue());
         }
     }
     
-    // 잠시 게임을 멈췄다가 계속하는 코루틴
-    IEnumerator PauseThenContinue()
-    {
-        Time.timeScale = 0;
-        yield return new WaitForSecondsRealtime(1.0f); // 실제 시간 1초 기다림
-        Time.timeScale = 1;
-    }
-    
-    // 게임 재시작 함수 (필요시 구현)
     public void RestartGame()
     {
-        // 현재 씬 재로드 등의 재시작 로직
         score = 0;
         lives = 3;
         gameOverFlag = false;

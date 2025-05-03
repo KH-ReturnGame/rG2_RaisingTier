@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(LineRenderer))]
 public class Launcher : MonoBehaviour
@@ -8,9 +9,19 @@ public class Launcher : MonoBehaviour
     public float maxForce = 20f;
     public float forceMultiplier = 2f;
 
-    public int trajectoryPoints = 30;
+    public int trajectoryPoints = 15;
     public float timeBetweenPoints = 0.1f;
     public float[] spawnProbabilities = { 0.5f, 0.3f, 0.15f, 0.05f };
+    
+    [Header("궤적 시각화 설정")]
+    [Range(0f, 1f)]
+    public float startAlpha = 1.0f;
+    [Range(0f, 1f)]
+    public float endAlpha = 0.0f;
+    public Color trajectoryColor = Color.white;
+    
+    public Material trajectoryMaterial;
+    public float lineWidth = 0.1f;
 
     LineRenderer lr;
     GameObject currentTier;
@@ -22,13 +33,49 @@ public class Launcher : MonoBehaviour
         lr = GetComponent<LineRenderer>();
         lr.useWorldSpace = true;
         lr.positionCount = 0;
-        lr.sortingOrder = 10;  
+        lr.sortingOrder = 10;
+        
+        SetupLineRenderer();
+        SetupTrajectoryGradient();
+    }
+    
+    void SetupLineRenderer()
+    {
+        if (trajectoryMaterial == null)
+        {
+            trajectoryMaterial = new Material(Shader.Find("Sprites/Default"));
+        }
+        
+        lr.material = trajectoryMaterial;
+        
+        lr.material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        lr.material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        
+        lr.startWidth = lineWidth;
+        lr.endWidth = lineWidth;
     }
 
     void Start()
     {
         startPos = transform.position;
         SpawnTier();
+    }
+    
+    void SetupTrajectoryGradient()
+    {
+        Gradient gradient = new Gradient();
+        
+        GradientColorKey[] colorKeys = new GradientColorKey[2];
+        colorKeys[0] = new GradientColorKey(trajectoryColor, 0f);
+        colorKeys[1] = new GradientColorKey(trajectoryColor, 1f);
+        
+        GradientAlphaKey[] alphaKeys = new GradientAlphaKey[2];
+        alphaKeys[0] = new GradientAlphaKey(startAlpha, 0f);
+        alphaKeys[1] = new GradientAlphaKey(endAlpha, 1f);
+        
+        gradient.SetKeys(colorKeys, alphaKeys);
+        
+        lr.colorGradient = gradient;
     }
 
     void Update()
@@ -114,6 +161,14 @@ public class Launcher : MonoBehaviour
             float t = timeBetweenPoints * i;
             Vector2 pt = p0 + v0 * t + 0.5f * gravity * t * t;
             lr.SetPosition(i, pt);
+        }
+    }
+    
+    void OnValidate()
+    {
+        if (lr != null)
+        {
+            SetupTrajectoryGradient();
         }
     }
 }
