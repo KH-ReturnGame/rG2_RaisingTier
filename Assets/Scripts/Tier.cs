@@ -1,14 +1,11 @@
-// Assets/Scripts/Fruit.cs
 using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(SpriteRenderer))]
-public class Fruit : MonoBehaviour
+public class Tier : MonoBehaviour
 {
     public int level = 1;
     public Sprite[] levelSprites;
-
-    [Header("머지 쿨다운(")]
     public float mergeDelay = 0.1f;
 
     private bool canMerge = false;
@@ -43,16 +40,22 @@ public class Fruit : MonoBehaviour
 
     public void UpdateSprite()
     {
-        if (levelSprites.Length >= level)
+        if (levelSprites != null && levelSprites.Length >= level && level > 0)
+        {
             sr.sprite = levelSprites[level - 1];
+        }
+        else
+        {
+            Debug.LogWarning($"레벨 {level}에 해당하는 스프라이트가 없습니다!");
+        }
     }
 
     void OnCollisionEnter2D(Collision2D col)
     {
         if (!canMerge) return;
-        if (!col.collider.CompareTag("Fruit")) return;
+        if (!col.collider.CompareTag("Tier")) return;
 
-        Fruit other = col.collider.GetComponent<Fruit>();
+        Tier other = col.collider.GetComponent<Tier>();
         if (other == null || other == this || !other.canMerge || other.level != level)
             return;
 

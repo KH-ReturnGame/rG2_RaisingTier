@@ -1,17 +1,20 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(LineRenderer))]
 public class Launcher : MonoBehaviour
 {
-    public GameObject fruitPrefab;
+    public GameObject tierPrefab;
     public float maxForce = 20f;
     public float forceMultiplier = 2f;
+
     public int trajectoryPoints = 30;
     public float timeBetweenPoints = 0.1f;
+    public float[] spawnProbabilities = { 0.5f, 0.3f, 0.15f, 0.05f };
 
     LineRenderer lr;
-    GameObject currentFruit;
-    Rigidbody2D currentRb;
+    GameObject currentTier;
+    Rigidbody2D currentTierRb;
     Vector2 startPos;
 
     void Awake()
@@ -19,17 +22,18 @@ public class Launcher : MonoBehaviour
         lr = GetComponent<LineRenderer>();
         lr.useWorldSpace = true;
         lr.positionCount = 0;
+        lr.sortingOrder = 10;  
     }
 
     void Start()
     {
         startPos = transform.position;
-        SpawnFruit();
+        SpawnTier();
     }
 
     void Update()
     {
-        if (currentFruit == null) return;
+        if (currentTier == null) return;
 
         if (Input.GetMouseButton(0))
         {
@@ -40,40 +44,65 @@ public class Launcher : MonoBehaviour
         }
 
         if (Input.GetMouseButtonUp(0))
-            FireFruit();
+            FireTier();
     }
 
-    void SpawnFruit()
+    void SpawnTier()
     {
-        if (fruitPrefab == null)
+        if (tierPrefab == null)
         {
-            Debug.LogError("Fruit Prefab이 없음");
+            Debug.LogError("프리팹이 없음");
             return;
         }
 
-        currentFruit = Instantiate(fruitPrefab, startPos, Quaternion.identity);
-        currentRb    = currentFruit.GetComponent<Rigidbody2D>();
-        currentRb.bodyType     = RigidbodyType2D.Kinematic;
-        currentRb.gravityScale = 0f;
-        currentFruit.tag       = "Fruit";
+        currentTier = Instantiate(tierPrefab, startPos, Quaternion.identity);
+        currentTierRb = currentTier.GetComponent<Rigidbody2D>();
+        currentTierRb.bodyType = RigidbodyType2D.Kinematic;
+        currentTierRb.gravityScale = 0f;
+        currentTier.tag = "Tier";
+
+        var tier = currentTier.GetComponent<Tier>();
+        if (tier != null)
+        {
+            tier.level = GetRandomTierLevel();
+            tier.UpdateSprite();
+        }
+
         lr.positionCount = 0;
     }
 
-    void FireFruit()
+    int GetRandomTierLevel()
     {
-        currentRb.bodyType     = RigidbodyType2D.Dynamic;
-        currentRb.gravityScale = 1f;
+        float rand = Random.value;
+        float cumulative = 0f;
 
-        Vector3 mw  = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        for (int i = 0; i < spawnProbabilities.Length; i++)
+        {
+            cumulative += spawnProbabilities[i];
+            if (rand <= cumulative)
+                return i + 1;
+        }
+        return 1;
+    }
+
+    void FireTier()
+    {
+        currentTierRb.bodyType = RigidbodyType2D.Dynamic;
+        currentTierRb.gravityScale = 1f;
+
+        Vector3 mw = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 dir = startPos - (Vector2)mw;
         float force = Mathf.Min(dir.magnitude, maxForce) * forceMultiplier;
-        currentRb.AddForce(dir.normalized * force, ForceMode2D.Impulse);
+        currentTierRb.AddForce(dir.normalized * force, ForceMode2D.Impulse);
+
+        float torque = -force * 10f;  
+        currentTierRb.angularVelocity = -360f;
 
         lr.positionCount = 0;
-        currentFruit = null;
-        currentRb    = null;
+        currentTier = null;
+        currentTierRb = null;
 
-        Invoke(nameof(SpawnFruit), 1f);
+        Invoke(nameof(SpawnTier), 0.5f);
     }
 
     void DrawTrajectory(Vector2 p0, Vector2 v0)
