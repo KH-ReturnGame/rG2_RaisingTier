@@ -2,9 +2,17 @@ using UnityEngine;
 
 public class ContainerBoundary : MonoBehaviour
 {
-    void OnTriggerExit2D(Collider2D col)
+    [SerializeField] private string killZoneObjectName = "killZone";
+
+    private void OnTriggerExit2D(Collider2D col)
     {
-        if (col.CompareTag("Tier"))
+        if (col.CompareTag("Tier") && gameObject.name == killZoneObjectName)
+        {
             FindObjectOfType<GameManager>().GameOver();
+        }
+        else
+        {
+        }
     }
+
 }

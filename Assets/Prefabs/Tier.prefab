@@ -134,12 +134,13 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 52e3be44930a05b4882da9adf63f5d3b, type: 3}
   - {fileID: 21300000, guid: 13f055ffdf15b6c4787c61aa3b9d2f30, type: 3}
   - {fileID: 21300000, guid: 23549723ef27e26489f7a41f65882520, type: 3}
-  - {fileID: -2852812960813792908, guid: 658985391892f0b4dbcfae29e801688d, type: 3}
-  - {fileID: 5152320268230992813, guid: a37d941f4d8c8f24ea7a6aa254437dd3, type: 3}
-  - {fileID: 442336791235148813, guid: 708b3b436a9f0794d85cea9c321ea5b0, type: 3}
-  - {fileID: 5728557472361241586, guid: bbd946de523f32d4b92f8a076ef98a21, type: 3}
-  - {fileID: 5172344760530035204, guid: 9aa0067e966a7b24090d42308b0e8c88, type: 3}
+  - {fileID: 21300000, guid: 658985391892f0b4dbcfae29e801688d, type: 3}
+  - {fileID: 21300000, guid: a37d941f4d8c8f24ea7a6aa254437dd3, type: 3}
+  - {fileID: 21300000, guid: 708b3b436a9f0794d85cea9c321ea5b0, type: 3}
+  - {fileID: 21300000, guid: bbd946de523f32d4b92f8a076ef98a21, type: 3}
+  - {fileID: 21300000, guid: 9aa0067e966a7b24090d42308b0e8c88, type: 3}
   mergeDelay: 0.1
+  colliderSizeMultiplier: 1
 --- !u!60 &7153414998836036857
 PolygonCollider2D:
   m_ObjectHideFlags: 0
