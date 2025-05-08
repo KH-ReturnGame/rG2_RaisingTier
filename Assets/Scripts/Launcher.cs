@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Collections;
 
 [RequireComponent(typeof(LineRenderer))]
 public class Launcher : MonoBehaviour
@@ -31,6 +32,9 @@ public class Launcher : MonoBehaviour
     GameObject currentTier;                  // 현재 발사 대기 중인 티어
     Rigidbody2D currentTierRb;               // 티어의 리지드바디
     Vector2 startPos;                        // 시작 위치
+    
+    // 스폰 플래그 - 여러 번 호출되는 것을 방지
+    private bool isSpawningTier = false;
 
     // 초기화 함수
     void Awake()
@@ -110,14 +114,45 @@ public class Launcher : MonoBehaviour
             FireTier();
     }
 
-    // 새 티어 생성
-    void SpawnTier()
+    // 새 티어 생성 - public으로 변경하고 중복 호출 방지
+    public void SpawnTier()
     {
+        // 이미 스폰 중이거나 현재 티어가 있으면 리턴
+        if (isSpawningTier || currentTier != null)
+            return;
+            
         if (tierPrefab == null)
         {
             Debug.LogError("프리팹이 없음");
             return;
         }
+
+        // 스폰 플래그 설정
+        isSpawningTier = true;
+        
+        // 코루틴으로 처리하여 한 프레임 기다린 후 생성
+        StartCoroutine(SpawnTierRoutine());
+    }
+    
+    // 티어 생성 코루틴
+    private IEnumerator SpawnTierRoutine()
+    {
+        // 한 프레임 대기 (이전 티어 정리 확인)
+        yield return null;
+        
+        // 기존에 발사 위치에 티어가 있는지 확인
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(startPos, 0.5f);
+        foreach (Collider2D col in colliders)
+        {
+            if (col.CompareTag("Tier"))
+            {
+                // 기존 티어가 발견되면 제거
+                Destroy(col.gameObject);
+            }
+        }
+        
+        // 한 프레임 더 대기하여 Destroy가 완료되도록 함
+        yield return null;
 
         // 티어 인스턴스 생성 및 설정
         currentTier = Instantiate(tierPrefab, startPos, Quaternion.identity);
@@ -136,6 +171,11 @@ public class Launcher : MonoBehaviour
 
         // 궤적 초기화
         lr.positionCount = 0;
+        
+        // 스폰 플래그 해제
+        isSpawningTier = false;
+        
+        Debug.Log("새 티어 생성 완료: 레벨 " + tier.level);
     }
 
     // 확률에 따라 랜덤 레벨 결정
@@ -156,6 +196,9 @@ public class Launcher : MonoBehaviour
     // 티어 발사 함수
     void FireTier()
     {
+        if (currentTier == null)
+            return;
+            
         // 물리 동작 활성화
         currentTierRb.bodyType = RigidbodyType2D.Dynamic;
         currentTierRb.gravityScale = 1f;
@@ -176,6 +219,7 @@ public class Launcher : MonoBehaviour
         currentTierRb = null;
 
         // 일정 시간 후 새 티어 생성
+        CancelInvoke(nameof(SpawnTier));  // 이전 Invoke 취소
         Invoke(nameof(SpawnTier), 0.5f);
     }
 
