@@ -1,3 +1,4 @@
+// Launcher.cs
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ public class Launcher : MonoBehaviour
     // 티어 발사 관련 변수
     public GameObject tierPrefab;            // 발사할 티어 프리팹
     public float maxForce = 20f;             // 최대 발사 힘
-    public float forceMultiplier = 2f;       // 힘 배수
+    public float forceMultiplier = 8f;       // 힘 배수
 
     // 궤적 관련 변수
     public int trajectoryPoints = 15;        // 궤적 포인트 수
@@ -71,6 +72,7 @@ public class Launcher : MonoBehaviour
     // 게임 시작 시 호출
     void Start()
     {
+        forceMultiplier = PlayerPrefs.GetFloat("ForceMultiplier", 8f);
         startPos = transform.position;
         SpawnTier();  // 첫 티어 생성
     }

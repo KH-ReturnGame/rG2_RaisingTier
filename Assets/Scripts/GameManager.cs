@@ -11,36 +11,56 @@ public class GameManager : MonoBehaviour
     public int maxLevel = 8;                 // 최대 티어 레벨
 
     // 점수 시스템
-    [Header("점수 시스템")]
+    [Header("점수")]
     public int score = 0;                    // 현재 점수
     public TextMeshProUGUI scoreText;        // 점수 표시 UI 텍스트
 
     // 생명 시스템
-    [Header("생명 시스템")]
+    [Header("생명")]
     public int lives = 3;                    // 현재 생명 수
     public TextMeshProUGUI livesText;        // 생명 표시 UI 텍스트
 
-    bool gameOverFlag = false;               // 게임오버 상태 플래그
+    // 게임오버 패널
+    public GameOverPanel gameOverPanel;      // 게임오버 패널 참조
 
+    // 로더 레퍼런스
+    public Launcher launcher;                // Launcher 컴포넌트 참조 (직접 할당)
+
+    bool gameOverFlag = false;               // 게임오버 상태 플래그
+    bool isRestarting = false;               // 재시작 중인지 여부를 나타내는 플래그
 
     // 게임 시작 시 초기화
     void Start()
     {
         UpdateScoreUI();
         UpdateLivesUI();
+        
+        // 시간 스케일이 0이라면 1로 복구 (이전 게임오버 상태에서 복구)
+        if (Time.timeScale == 0)
+            Time.timeScale = 1;
+            
+        // Launcher 참조가 없으면 찾아서 할당
+        if (launcher == null)
+            launcher = FindObjectOfType<Launcher>();
     }
 
-    // 두 티어을 합치는 함수
+    // 두 티어를 합치는 함수
     public void Merge(Tier a, Tier b)
     {
-        // 합칠 수 없는 경우 처리
-        if (a == null || b == null || a == b) return;
+        // 합칠 수 없는 경우나 재시작 중이면 처리하지 않음
+        if (a == null || b == null || a == b || isRestarting) return;
 
         // 이전 레벨 저장하고 새 레벨 계산
         int previousLevel = a.level;
         int newLevel = Mathf.Min(a.level + 1, maxLevel);
         // 두 티어의 중간 위치 계산
         Vector2 spawnPos = (a.transform.position + b.transform.position) * 0.5f;
+
+        // 벽에 끼는 현상 방지 (오프셋 적용)
+        float safeOffset = 0.1f;
+        Vector2 containerCenter = containerInterior.bounds.center;
+        Vector2 normal = (spawnPos - containerCenter).normalized;
+        spawnPos += normal * safeOffset;
 
         // 기존 티어 제거
         Destroy(a.gameObject);
@@ -62,7 +82,7 @@ public class GameManager : MonoBehaviour
         mf.UpdateSprite();
         mf.ResetMergeCooldown();
 
-        // 새 티어이 게임 영역 안에 있도록 위치 조정
+        // 새 티어가 게임 영역 안에 있도록 위치 조정
         ClampInsideContainer(merged);
 
         // 점수 추가 (2^(레벨-1) 만큼의 점수)
@@ -135,13 +155,35 @@ public class GameManager : MonoBehaviour
         {
             gameOverFlag = true;
             Debug.Log("게임 오버! 최종 점수: " + score);
-            Time.timeScale = 0;  // 게임 일시정지
+            
+            // 게임오버 패널 표시
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.ShowGameOverPanel(score);
+                
+                // 패널 표시 후 게임 일시정지
+                StartCoroutine(PauseGameAfterDelay(0.1f));
+            }
+            else
+            {
+                Time.timeScale = 0; // 패널이 없는 경우 바로 일시정지
+            }
         }
     }
     
-    // 게임 재시작 함수 (제작중)
+    // 일정 시간 후 게임 일시정지하는 코루틴
+    private IEnumerator PauseGameAfterDelay(float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        Time.timeScale = 0;  // 게임 일시정지
+    }
+    
+    // 게임 재시작 함수
     public void RestartGame()
     {
+        // 재시작 플래그 설정
+        isRestarting = true;
+        
         // 게임 상태 초기화
         score = 0;
         lives = 3;
@@ -151,5 +193,42 @@ public class GameManager : MonoBehaviour
         // UI 업데이트
         UpdateScoreUI();
         UpdateLivesUI();
+        
+        // 씬에 있는 모든 Tier 오브젝트 제거
+        StartCoroutine(CleanupAndRestartGame());
+    }
+    
+    // 게임 오브젝트 정리 및 재시작 코루틴
+    private IEnumerator CleanupAndRestartGame()
+    {
+        // 씬에 있는 모든 Tier 오브젝트 제거
+        GameObject[] tiers = GameObject.FindGameObjectsWithTag("Tier");
+        foreach (GameObject tier in tiers)
+        {
+            Destroy(tier);
+        }
+        
+        // 한 프레임 대기하여 Destroy가 완료되도록 함
+        yield return null;
+        
+        // Launcher 컴포넌트를 찾아서 새 티어 생성 메소드 호출
+        if (launcher == null)
+        {
+            launcher = FindObjectOfType<Launcher>();
+        }
+        
+        if (launcher != null)
+        {
+            // 런처가 있으면 직접 SpawnTier 호출
+            launcher.SpawnTier();
+            Debug.Log("새 티어가 생성되었습니다.");
+        }
+        else
+        {
+            Debug.LogError("Launcher를 찾을 수 없습니다!");
+        }
+        
+        // 재시작 플래그 해제
+        isRestarting = false;
     }
 }

@@ -118,20 +118,29 @@ public class Tier : MonoBehaviour
         return sum / points.Count;  // 평균 위치 반환
     }
 
-    // 충돌 이벤트 처리
-    void OnCollisionEnter2D(Collision2D col)
+    // 충돌 병합 로직 분리
+    private void TryMerge(Collision2D col)
     {
-        // 합치기 조건 확인
         if (!canMerge) return;
         if (!col.collider.CompareTag("Tier")) return;
 
         Tier other = col.collider.GetComponent<Tier>();
-        // 동일 레벨의 티어만 합치기 가능
         if (other == null || other == this || !other.canMerge || other.level != level)
             return;
 
-        // 합치기 기능 비활성화하고 게임 매니저에 합치기 요청
         canMerge = other.canMerge = false;
         gm.Merge(this, other);
+    }
+
+    // 충돌 이벤트 처리
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        TryMerge(col);
+    }
+
+    // 충돌 유지 중에도 병합 시도
+    void OnCollisionStay2D(Collision2D col)
+    {
+        TryMerge(col);
     }
 }
